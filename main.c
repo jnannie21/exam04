@@ -4,8 +4,8 @@
 #include <string.h>
 
 int			g_pipe_des[2];
-int			g_stdout = 0;
-int			g_stdin = 0;
+int			g_stdout;
+int			g_stdin;
 
 int			ft_strlen(char *str)
 {
@@ -133,8 +133,6 @@ int			main(int argc, char **argv, char **envp)
 	argv++;
 	g_stdin = dup(0);
 	g_stdout = dup(1);
-	g_pipe_des[0] = 0;
-	g_pipe_des[1] = 0;
 	while (1)
 	{
 		if (*argv == 0)
