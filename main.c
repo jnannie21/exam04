@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <unistd.h>
+#include <string.h>
 
 int			g_pipe_des[2];
 int			g_stdout = 0;
@@ -33,6 +34,7 @@ char		*ft_strdup(char *str)
 void		fatal_error(void)
 {
 	write(2, "error: fatal", ft_strlen("error: fatal"));
+	write(2, "\n", 1);
 	exit(EXIT_FAILURE);
 }
 
@@ -65,21 +67,23 @@ void		execute(char **command_argv, char **envp, int in_pipe)
 
 	if (g_pipe_des[0])
 	{
-		dup2(g_pipe_des[0], 0);
+		if (dup2(g_pipe_des[0], 0) == -1)
+			fatal_error();
 		close(g_pipe_des[0]);
 		g_pipe_des[0] = 0;
 	}
-	else
-		dup2(g_stdin, 0);
+	else if (dup2(g_stdin, 0) == -1)
+			fatal_error();
 	if (in_pipe)
 	{
 		if (pipe(g_pipe_des) == -1)
 			fatal_error();
-		dup2(g_pipe_des[1], 1);
+		if (dup2(g_pipe_des[1], 1) == -1)
+			fatal_error();
 		close(g_pipe_des[1]);
 	}
-	else
-		dup2(g_stdout, 1);
+	else if (dup2(g_stdout, 1) == -1)
+			fatal_error();
 	if (strcmp(command_argv[0], "cd") == 0)
 	{
 		if (!command_argv[1] || command_argv[2])
@@ -105,10 +109,8 @@ void		execute(char **command_argv, char **envp, int in_pipe)
 		}
 	}
 	if (!in_pipe)
-	{
 		while (wait(&exit_status) != -1)
 			;
-	}
 }
 
 void		free_argv(char **command_argv)
