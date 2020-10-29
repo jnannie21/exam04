@@ -63,7 +63,6 @@ char		**add_arg(char **command_argv, char *arg)
 void		execute(char **command_argv, char **envp, int in_pipe)
 {
 	int		pid;
-	int		exit_status;
 
 	if (g_pipe_des[0])
 	{
@@ -106,10 +105,11 @@ void		execute(char **command_argv, char **envp, int in_pipe)
 			write(2, "error: cannot execute ", ft_strlen("error: cannot execute "));
 			write(2, command_argv[0], ft_strlen(command_argv[0]));
 			write(2, "\n", 1);
+			exit(EXIT_FAILURE);
 		}
 	}
 	if (!in_pipe)
-		while (wait(&exit_status) != -1)
+		while (wait(NULL) != -1)
 			;
 }
 
