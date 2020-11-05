@@ -83,6 +83,8 @@ void		execute(char **command_argv, char **envp, int in_pipe)
 	}
 	else if (dup2(g_stdout, 1) == -1)
 			fatal_error();
+	if (!command_argv)
+		return ;
 	if (strcmp(command_argv[0], "cd") == 0)
 	{
 		if (!command_argv[1] || command_argv[2])
@@ -105,7 +107,7 @@ void		execute(char **command_argv, char **envp, int in_pipe)
 			write(2, "error: cannot execute ", ft_strlen("error: cannot execute "));
 			write(2, command_argv[0], ft_strlen(command_argv[0]));
 			write(2, "\n", 1);
-			exit(EXIT_FAILURE);
+			exit(-1);
 		}
 	}
 	if (!in_pipe)
@@ -117,7 +119,7 @@ void		free_argv(char **command_argv)
 {
 	int		i = 0;
 
-	while (command_argv[i])
+	while (command_argv && command_argv[i])
 	{
 		free(command_argv[i]);
 		i++;
@@ -139,15 +141,16 @@ int			main(int argc, char **argv, char **envp)
 		{
 			if (command_argv)
 				execute(command_argv, envp, 0);
+			free_argv(command_argv);
 			break ;
 		}
-		else if (**argv == '|')
+		else if (**argv == '|' && *(*argv + 1) == '\0')
 		{
 			execute(command_argv, envp, 1);
 			free_argv(command_argv);
 			command_argv = 0;
 		}
-		else if (**argv == ';')
+		else if (**argv == ';' && *(*argv + 1) == '\0')
 		{
 			execute(command_argv, envp, 0);
 			free_argv(command_argv);
@@ -157,5 +160,9 @@ int			main(int argc, char **argv, char **envp)
 			command_argv = add_arg(command_argv, *argv);
 		argv++;
 	}
+	dup2(g_stdin, 0);
+	dup2(g_stdout, 1);
+	close(g_stdin);
+	close(g_stdout);
 	return (!argc);
 }
