@@ -2,7 +2,6 @@
 #include <unistd.h>
 #include <unistd.h>
 #include <string.h>
-// #include <stdio.h>
 
 int			g_pipe_des[2];
 
@@ -13,21 +12,6 @@ int			ft_strlen(char *str)
 	while (str[i])
 		i++;
 	return (i);
-}
-
-char		*ft_strdup(char *str)
-{
-	char	*res;
-	int		i = 0;
-
-	res = malloc(sizeof(char) * ft_strlen(str) + 1);
-	while (str[i])
-	{
-		res[i] = str[i];
-		i++;
-	}
-	res[i] = '\0';
-	return (res);
 }
 
 void		fatal_error(void)
@@ -53,22 +37,9 @@ char		**add_arg(char **command_argv, char *arg)
 		i++;
 	}
 	free(temp);
-	if (!(command_argv[i] = ft_strdup(arg)))
-		fatal_error();
+	command_argv[i] = arg;
 	command_argv[i + 1] = 0;
 	return (command_argv);
-}
-
-void		free_argv(char **command_argv)
-{
-	int		i = 0;
-
-	while (command_argv && command_argv[i])
-	{
-		free(command_argv[i]);
-		i++;
-	}
-	free(command_argv);
 }
 
 int			execute(char **command_argv, char **envp, int in_pipe)
@@ -128,7 +99,7 @@ int			execute(char **command_argv, char **envp, int in_pipe)
 			write(2, "error: cannot execute ", ft_strlen("error: cannot execute "));
 			write(2, command_argv[0], ft_strlen(command_argv[0]));
 			write(2, "\n", 1);
-			exit(127);
+			exit(1);
 		}
 		if (pipe_in != 0)
 			close(pipe_in);
@@ -157,7 +128,7 @@ int			main(int argc, char **argv, char **envp)
 		{
 			if (command_argv)
 				ret = execute(command_argv, envp, 0);
-			free_argv(command_argv);
+			free(command_argv);
 			command_argv = 0;
 			break ;
 		}
@@ -165,21 +136,18 @@ int			main(int argc, char **argv, char **envp)
 		{
 			if (command_argv)
 				ret = execute(command_argv, envp, 1);
-			free_argv(command_argv);
+			free(command_argv);
 			command_argv = 0;
 		}
 		else if (!strcmp(*argv, ";"))
 		{
 			if (command_argv)
 				ret = execute(command_argv, envp, 0);
-			free_argv(command_argv);
+			free(command_argv);
 			command_argv = 0;
 		}
 		else
 			command_argv = add_arg(command_argv, *argv);
 	}
-	// int		pipe_fd[2];
-	// pipe(pipe_fd);
-	// printf("%d %d\n", pipe_fd[0], pipe_fd[1]);
 	return (ret);
 }
