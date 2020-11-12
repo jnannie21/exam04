@@ -5,8 +5,6 @@
 // #include <stdio.h>
 
 int			g_pipe_des[2];
-int			g_stdout;
-int			g_stdin;
 
 int			ft_strlen(char *str)
 {
@@ -78,6 +76,8 @@ int			execute(char **command_argv, char **envp, int in_pipe)
 	int		pid;
 	int		exit_status = 0;
 	int		ret = 0;
+	int		pipe_in = 0;
+	int		pipe_out = 1;
 
 	if (strcmp(command_argv[0], "cd") == 0)
 	{
@@ -98,28 +98,32 @@ int			execute(char **command_argv, char **envp, int in_pipe)
 	{
 		if (g_pipe_des[0])
 		{
-			if (dup2(g_pipe_des[0], 0) == -1)
-				fatal_error();
-			close(g_pipe_des[0]);
+			pipe_in = g_pipe_des[0];
 			g_pipe_des[0] = 0;
 		}
-		else if (dup2(g_stdin, 0) == -1)
-			fatal_error();
 		if (in_pipe)
 		{
 			if (pipe(g_pipe_des) == -1)
 				fatal_error();
-			if (dup2(g_pipe_des[1], 1) == -1)
-				fatal_error();
-			close(g_pipe_des[1]);
+			pipe_out = g_pipe_des[1];
 		}
-		else if (dup2(g_stdout, 1) == -1)
-				fatal_error();
 		pid = fork();
 		if (pid < 0)
 			fatal_error();
 		else if (pid == 0)
 		{
+			if (pipe_in != 0)
+			{
+				if (dup2(pipe_in, 0) == -1)
+					fatal_error();
+				close(pipe_in);
+			}
+			if (pipe_out != 1)
+			{
+				if (dup2(pipe_out, 1) == -1)
+					fatal_error();
+				close(pipe_out);
+			}
 			execve(command_argv[0], command_argv, envp);
 			write(2, "error: cannot execute ", ft_strlen("error: cannot execute "));
 			write(2, command_argv[0], ft_strlen(command_argv[0]));
@@ -129,6 +133,10 @@ int			execute(char **command_argv, char **envp, int in_pipe)
 		waitpid(pid, &exit_status, 0);
 		if (WIFEXITED(exit_status))
 			ret = WEXITSTATUS(exit_status);
+		if (pipe_in != 0)
+			close(pipe_in);
+		if (pipe_out != 1)
+			close(pipe_out);
 		// else if (WIFSIGNALED(exit_status))
 		// 	exit_status = exit_status | 128;
 		// 	exit_status = WTERMSIG(exit_status);
@@ -142,8 +150,6 @@ int			main(int argc, char **argv, char **envp)
 	int		ret = 0;
 
 	command_argv = 0;
-	g_stdin = dup(0);
-	g_stdout = dup(1);
 	while (argc)
 	{
 		argv++;
@@ -172,11 +178,8 @@ int			main(int argc, char **argv, char **envp)
 		else
 			command_argv = add_arg(command_argv, *argv);
 	}
-	dup2(g_stdin, 0);
-	dup2(g_stdout, 1);
-	close(g_stdin);
-	close(g_stdout);
-	// pipe(g_pipe_des);
-	// printf("%d %d\n", g_pipe_des[0], g_pipe_des[1]);
+	// int		pipe_fd[2];
+	// pipe(pipe_fd);
+	// printf("%d %d\n", pipe_fd[0], pipe_fd[1]);
 	return (ret);
 }
