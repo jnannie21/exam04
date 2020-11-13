@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <unistd.h>
-#include <unistd.h>
 #include <string.h>
+#include <sys/wait.h>
 
 int			g_pipe_des[2];
 
@@ -108,9 +108,6 @@ int			execute(char **command_argv, char **envp, int in_pipe)
 		waitpid(pid, &exit_status, 0);
 		if (WIFEXITED(exit_status))
 			ret = WEXITSTATUS(exit_status);
-		// else if (WIFSIGNALED(exit_status))
-		// 	exit_status = exit_status | 128;
-		// 	exit_status = WTERMSIG(exit_status);
 	}
 	return (ret);
 }
