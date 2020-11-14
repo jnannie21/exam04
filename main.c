@@ -4,6 +4,7 @@
 #include <sys/wait.h>
 
 int			g_pipe_des[2];
+char		**g_argv;
 
 int			ft_strlen(char *str)
 {
@@ -57,12 +58,11 @@ int			execute(char **command_argv, char **envp, int in_pipe)
 			write(2, "error: cd: bad arguments\n", ft_strlen("error: cd: bad arguments\n"));
 			ret = 1;
 		}
-		else if ((chdir(command_argv[1])) == -1)
+		else if ((ret = chdir(command_argv[1])) == -1)
 		{
 			write(2, "error: cd: cannot change directory to ", ft_strlen("error: cd: cannot change directory to "));
 			write(2, command_argv[1], ft_strlen(command_argv[1]));
 			write(2, "\n", 1);
-			ret = 1;
 		}
 	}
 	else
@@ -95,16 +95,24 @@ int			execute(char **command_argv, char **envp, int in_pipe)
 					fatal_error();
 				close(pipe_out);
 			}
-			execve(command_argv[0], command_argv, envp);
+			ret = execve(command_argv[0], command_argv, envp);
 			write(2, "error: cannot execute ", ft_strlen("error: cannot execute "));
 			write(2, command_argv[0], ft_strlen(command_argv[0]));
 			write(2, "\n", 1);
-			exit(1);
+			exit(ret);
 		}
 		if (pipe_in != 0)
 			close(pipe_in);
 		if (pipe_out != 1)
 			close(pipe_out);
+		if (*g_argv && (!*(g_argv + 1) || !strcmp(*(g_argv + 1), ";")))
+		{
+			if (g_pipe_des[0])
+			{
+				close(g_pipe_des[0]);
+				g_pipe_des[0] = 0;
+			}
+		}
 		waitpid(pid, &exit_status, 0);
 		if (WIFEXITED(exit_status))
 			ret = WEXITSTATUS(exit_status);
@@ -120,6 +128,7 @@ int			main(int argc, char **argv, char **envp)
 	command_argv = 0;
 	while (argc)
 	{
+		g_argv = argv;
 		argv++;
 		if (*argv == 0)
 		{
